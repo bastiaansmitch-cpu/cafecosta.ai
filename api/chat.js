@@ -1,35 +1,43 @@
 export default async function handler(req, res) {
-  const { message } = req.body;
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method not allowed" });
+  }
 
-  const prompt = `
-Je bent de chatbot van Café Costa.
+  try {
+    const { message } = req.body;
 
-Praat kort, gezellig en verkoopgericht.
-Stuur richting reservering.
+    const response = await fetch("https://api.openai.com/v1/responses", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: "gpt-4.1-mini",
+        input: `Je bent de chatbot van Café Costa.
 
-Info:
-- 20-50 personen
-- €600 dranktegoed
-- €12,50 p.p per uur
+INFO:
+- Café op eerste verdieping
+- Ruimte voor 20-50 personen
+- Geen zaalhuur, min. €600 baromzet vooraf
+- Arrangement: €12,50 p.p. per uur (min 4 uur)
 
-Vraag: ${message}
-`;
+Doel:
+- Bezoekers helpen
+- Leads verzamelen
+- Doorsturen naar WhatsApp
 
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      model: "gpt-4o-mini",
-      messages: [{ role: "user", content: prompt }]
-    })
-  });
+Vraag: ${message}`
+      })
+    });
 
-  const data = await response.json();
+    const data = await response.json();
 
-  res.status(200).json({
-    reply: data.choices[0].message.content
-  });
+    res.status(200).json({
+      reply: data.output[0].content[0].text
+    });
+
+  } catch (error) {
+    res.status(500).json({ error: "AI error", details: error.message });
+  }
 }
