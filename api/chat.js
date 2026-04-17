@@ -59,7 +59,6 @@ ${message}
       },
       body: JSON.stringify({
         model: "gpt-4.1-mini",
-        temperature: 0.7,
         input: prompt
       })
     });
@@ -67,38 +66,20 @@ ${message}
     const data = await response.json();
 
     if (!response.ok) {
+      console.log("OpenAI error:", data);
       return res.status(response.status).json({
         error: "OpenAI request failed",
         details: data
       });
     }
 
-    let reply = "";
-
-    if (typeof data.output_text === "string" && data.output_text.trim()) {
-      reply = data.output_text.trim();
-    } else if (Array.isArray(data.output)) {
-      const collectedText = [];
-
-      for (const item of data.output) {
-        if (!Array.isArray(item.content)) continue;
-
-        for (const contentItem of item.content) {
-          if (typeof contentItem.text === "string" && contentItem.text.trim()) {
-            collectedText.push(contentItem.text.trim());
-          }
-        }
-      }
-
-      reply = collectedText.join("\n").trim();
-    }
-
-    if (!reply) {
-      reply = "Zeker 😊 Waar kan ik je mee helpen? Wil je iets weten over reserveren of over onze ruimte boven?";
-    }
+    const reply =
+      data.output_text ||
+      "Zeker 😊 Waar kan ik je mee helpen? Wil je iets weten over reserveren of over onze ruimte boven?";
 
     return res.status(200).json({ reply });
   } catch (error) {
+    console.log("Server error:", error);
     return res.status(500).json({
       error: "AI error",
       details: error?.message || "Unknown server error"
