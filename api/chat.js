@@ -4,7 +4,11 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { message } = req.body;
+    const { message } = req.body || {};
+
+    if (!message) {
+      return res.status(400).json({ error: "No message provided" });
+    }
 
     const response = await fetch("https://api.openai.com/v1/responses", {
       method: "POST",
@@ -14,10 +18,7 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         model: "gpt-4.1-mini",
-
-        // 🔥 betere AI output (meer menselijk + minder saai)
         temperature: 0.8,
-
         input: `
 Je bent de chatbot van Café Costa in Eindhoven 🍻 (www.cafecosta.nl)
 
@@ -43,8 +44,8 @@ BELANGRIJK GEDRAG:
 - bij twijfel: enthousiasmeren en geruststellen
 - probeer altijd subtiel te verkopen
 
-VERKOOPGEDRAG (HEEL BELANGRIJK):
-- je probeert altijd een stap verder te brengen in het gesprek
+VERKOOPGEDRAG:
+- probeer altijd een stap verder te brengen in het gesprek
 - stel altijd iets voor zoals een datum, reservering of offerte
 - eindig nooit zonder vervolgactie of vraag
 
@@ -67,16 +68,22 @@ ${message}
 
     const data = await response.json();
 
-    // 🔥 FIX 1: veilige AI response (voorkomt kapotte replies)
+    if (!response.ok) {
+      return res.status(response.status).json({
+        error: "OpenAI request failed",
+        details: data
+      });
+    }
+
     const reply =
+      data.output_text ||
       data.output?.[0]?.content?.[0]?.text ||
       "Sorry, ik kon geen antwoord maken 😅";
 
-    res.status(200).json({ reply });
+    return res.status(200).json({ reply });
 
   } catch (error) {
-    // 🔥 FIX 2: betere error handling
-    res.status(500).json({
+    return res.status(500).json({
       error: "AI error",
       details: error.message
     });
