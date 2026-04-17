@@ -6,63 +6,61 @@ export default async function handler(req, res) {
   try {
     const { message } = req.body || {};
 
-    if (!message) {
-      return res.status(400).json({ error: "No message provided" });
+    if (!message || typeof message !== "string") {
+      return res.status(400).json({ error: "No valid message provided" });
     }
+
+    const prompt = `
+Je bent de chatbot van Café Costa 🍻
+
+ROL:
+Je bent een warme, vlotte host van Café Costa. Je helpt bezoekers met vragen en probeert op een natuurlijke manier reserveringen en aanvragen voor de ruimte te stimuleren.
+
+STIJL:
+- kort en duidelijk
+- vriendelijk en menselijk
+- informeel maar niet overdreven
+- af en toe een subtiele emoji
+- nooit droog of robotachtig
+
+BELANGRIJK GEDRAG:
+- geef concrete antwoorden
+- stel vaak 1 logische vervolgvraag
+- stuur bij interesse in groepen/feesten subtiel richting aanvraag
+- zeg niet dat je een AI bent
+- verzin geen informatie die je niet zeker weet
+
+BEDRIJFSINFO:
+- Café Costa
+- ruimte op de eerste verdieping
+- geschikt voor 20 tot 50 personen
+- geen zaalhuur
+- minimale barbesteding: €600 vooraf
+- arrangement bier/fris/wijn: €12,50 per persoon per uur
+- minimum arrangement: 4 uur
+
+ALS IEMAND INTERESSE HEEFT IN DE RUIMTE:
+- benoem kort de voordelen
+- maak het laagdrempelig
+- eindig bij voorkeur met een vervolgvraag zoals:
+  "Voor hoeveel personen zoek je iets?"
+  "Aan wat voor soort feestje denk je?"
+  "Voor welke datum ongeveer?"
+
+Vraag van bezoeker:
+${message}
+`;
 
     const response = await fetch("https://api.openai.com/v1/responses", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
+        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
         model: "gpt-4.1-mini",
-        temperature: 0.8,
-        input: `
-Je bent de chatbot van Café Costa in Eindhoven 🍻 (www.cafecosta.nl)
-
-Je bent een enthousiaste, vriendelijke host/bartender die werkt in het café en via chat met gasten praat.
-
-DOEL:
-- reserveringen binnenhalen
-- feestjes verkopen
-- mensen overtuigen contact op te nemen via WhatsApp
-- het gesprek altijd gaande houden
-
-STIJL:
-- informeel, warm en gezellig
-- korte zinnen
-- menselijk en spontaan
-- soms emoji 🍻🎉😄
-- nooit zakelijk of droog
-
-BELANGRIJK GEDRAG:
-- altijd sturen richting reserveren of een event
-- altijd een vervolgvraag stellen
-- bij interesse: push richting WhatsApp
-- bij twijfel: enthousiasmeren en geruststellen
-- probeer altijd subtiel te verkopen
-
-VERKOOPGEDRAG:
-- probeer altijd een stap verder te brengen in het gesprek
-- stel altijd iets voor zoals een datum, reservering of offerte
-- eindig nooit zonder vervolgactie of vraag
-
-BEDRIJFSINFO:
-- Café Costa in Eindhoven
-- Ruimte voor 20–50 personen
-- Op eerste verdieping
-- Geen zaalhuur
-- Minimaal €600 baromzet vooraf
-- Arrangement: €12,50 p.p. per uur (min 4 uur)
-
-WEBSITE:
-www.cafecosta.nl
-
-Vraag van de klant:
-${message}
-        `
+        temperature: 0.7,
+        input: prompt
       })
     });
 
@@ -75,17 +73,35 @@ ${message}
       });
     }
 
-    const reply =
-      data.output_text ||
-      data.output?.[0]?.content?.[0]?.text ||
-      "Sorry, ik kon geen antwoord maken 😅";
+    let reply = "";
+
+    if (typeof data.output_text === "string" && data.output_text.trim()) {
+      reply = data.output_text.trim();
+    } else if (Array.isArray(data.output)) {
+      const collectedText = [];
+
+      for (const item of data.output) {
+        if (!Array.isArray(item.content)) continue;
+
+        for (const contentItem of item.content) {
+          if (typeof contentItem.text === "string" && contentItem.text.trim()) {
+            collectedText.push(contentItem.text.trim());
+          }
+        }
+      }
+
+      reply = collectedText.join("\n").trim();
+    }
+
+    if (!reply) {
+      reply = "Zeker 😊 Waar kan ik je mee helpen? Wil je iets weten over reserveren of over onze ruimte boven?";
+    }
 
     return res.status(200).json({ reply });
-
   } catch (error) {
     return res.status(500).json({
       error: "AI error",
-      details: error.message
+      details: error?.message || "Unknown server error"
     });
   }
 }
