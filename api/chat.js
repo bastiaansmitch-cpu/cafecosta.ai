@@ -39,14 +39,6 @@ BEDRIJFSINFO:
 - arrangement bier/fris/wijn: €12,50 per persoon per uur
 - minimum arrangement: 4 uur
 
-ALS IEMAND INTERESSE HEEFT IN DE RUIMTE:
-- benoem kort de voordelen
-- maak het laagdrempelig
-- eindig bij voorkeur met een vervolgvraag zoals:
-  "Voor hoeveel personen zoek je iets?"
-  "Aan wat voor soort feestje denk je?"
-  "Voor welke datum ongeveer?"
-
 Vraag van bezoeker:
 ${message}
 `;
@@ -66,7 +58,6 @@ ${message}
     const data = await response.json();
 
     if (!response.ok) {
-      console.log("OpenAI error:", data);
       return res.status(response.status).json({
         error: "OpenAI request failed",
         details: data
@@ -79,7 +70,6 @@ ${message}
 
     return res.status(200).json({ reply });
   } catch (error) {
-    console.log("Server error:", error);
     return res.status(500).json({
       error: "AI error",
       details: error?.message || "Unknown server error"
