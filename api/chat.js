@@ -1,35 +1,41 @@
 export default async function handler(req, res) {
+  // ─── CORS headers ───────────────────────────────────────
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+
+  // Preflight request afhandelen
+  if (req.method === "OPTIONS") {
+    return res.status(200).end();
+  }
+  // ────────────────────────────────────────────────────────
+
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
   try {
     const { message } = req.body || {};
-
     if (!message || typeof message !== "string") {
       return res.status(400).json({ error: "No valid message provided" });
     }
 
     const prompt = `
 Je bent de chatbot van Café Costa 🍻
-
 ROL:
 Je bent een warme, vlotte host van Café Costa. Je helpt bezoekers met vragen en probeert op een natuurlijke manier reserveringen en aanvragen voor de ruimte te stimuleren.
-
 STIJL:
 - kort en duidelijk
 - vriendelijk en menselijk
 - informeel maar niet overdreven
 - af en toe een subtiele emoji
 - nooit droog of robotachtig
-
 BELANGRIJK GEDRAG:
 - geef concrete antwoorden
 - stel vaak 1 logische vervolgvraag
 - stuur bij interesse in groepen/feesten subtiel richting aanvraag
 - zeg niet dat je een AI bent
 - verzin geen informatie die je niet zeker weet
-
 BEDRIJFSINFO:
 - Café Costa
 - ruimte op de eerste verdieping
@@ -38,7 +44,6 @@ BEDRIJFSINFO:
 - minimale barbesteding: €600 vooraf
 - arrangement bier/fris/wijn: €12,50 per persoon per uur
 - minimum arrangement: 4 uur
-
 Vraag van bezoeker:
 ${message}
 `;
@@ -69,6 +74,7 @@ ${message}
       "Zeker 😊 Waar kan ik je mee helpen? Wil je iets weten over reserveren of over onze ruimte boven?";
 
     return res.status(200).json({ reply });
+
   } catch (error) {
     return res.status(500).json({
       error: "AI error",
