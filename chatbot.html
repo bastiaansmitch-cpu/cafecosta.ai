@@ -334,6 +334,7 @@
       <div id="cc-header-sub">Uw persoonlijke assistent</div>
     </div>
     <div id="cc-online"></div>
+    <button id="cc-close" aria-label="Sluit chat" style="background:none;border:none;color:var(--text-dim);font-size:20px;cursor:pointer;padding:0 0 0 8px;line-height:1;">✕</button>
   </div>
   <div id="cc-messages" aria-live="polite"></div>
   <div id="cc-quick"></div>
@@ -397,19 +398,9 @@ Stel maar één vraag tegelijk. Vraag bij stap 4 altijd op deze manier: "Laat je
 Zodra alles compleet is, bevestig de aanvraag warm en vertel dat het team snel contact opneemt.
 
 NA HET TYPE EVENT:
-Zodra je het type event weet, stel dan ALTIJD deze vraag:
-"Wil je meer informatie over wat wij kunnen bieden, of wil je direct een vrijblijvende aanvraag doen?"
-
-Als iemand meer informatie wil:
-- Geef een korte enthousiaste introductie over Café Costa
-- Eigen ruimte op de eerste verdieping in Eindhoven, 20-50 personen
-- Eigen bar, bartender, licht en geluid inbegrepen
-- DJ mogelijk of eigen DJ welkom
-- Drie drankopties: op rekening, of een van de twee afkooparrangementen
-- Foto's op cafecosta.nl
-- Sluit ALTIJD af met: "Wil je een vrijblijvende aanvraag doen zodat we alles kunnen bespreken?"
-
-Als iemand direct een aanvraag wil doen, ga dan meteen door naar het aantal personen.
+Stel na het type event altijd eerst de vraag: "Wil je meer informatie over wat wij kunnen bieden, of wil je direct een vrijblijvende aanvraag doen?"
+Als iemand eerst een vraag stelt, beantwoord die dan gewoon vriendelijk en volledig. Sluit daarna af met: "Wil je een vrijblijvende aanvraag doen zodat we alles kunnen bespreken?"
+Dring nooit aan op contactgegevens als iemand nog vragen heeft — laat het gesprek natuurlijk verlopen.
 
 MEDEWERKER SPREKEN:
 Als iemand een medewerker wil spreken of een afspraak wil maken, verzamel dan:
@@ -610,6 +601,8 @@ ALGEMEEN:
       } else if (lower.includes("soort") || lower.includes("type event") || lower.includes("wat voor")) {
         setButtons(["Verjaardag 🎂", "Bedrijfsborrel 💼", "Feest 🎉", "Anders"]);
       } else if (
+        lower.includes("meer informatie") ||
+        lower.includes("vrijblijvend") ||
         lower.includes("idee hoe je") ||
         lower.includes("meer weten over") ||
         lower.includes("wil je meer weten") ||
@@ -619,12 +612,12 @@ ALGEMEEN:
         lower.includes("aanvraag indienen") ||
         lower.includes("wensen voor de avond") ||
         lower.includes("kunnen bieden qua") ||
-        lower.includes("meer informatie") ||
-        lower.includes("vrijblijvend") ||
         lower.includes("doorsturen") ||
         lower.includes("verder gaan") ||
         lower.includes("wil je weten") ||
-        lower.includes("nog vragen")
+        lower.includes("nog vragen") ||
+        lower.includes("direct een") ||
+        lower.includes("alles kunnen bespreken")
       ) {
         setButtons(["Meer informatie 📋", "Vrijblijvende aanvraag doen ✅"]);
       } else if (lower.includes("datum") || lower.includes("welke dag") || lower.includes("wanneer")) {
@@ -689,6 +682,11 @@ ALGEMEEN:
   });
 
   sendEl.addEventListener("click", () => sendMessage(inputEl.value));
+
+  document.getElementById("cc-close").addEventListener("click", () => {
+    chatEl.style.display = "none";
+    window.parent.postMessage("chat-closed", "*");
+  });
 
   document.addEventListener("click", e => {
     if (!e.target.matches(".cc-btn")) return;
