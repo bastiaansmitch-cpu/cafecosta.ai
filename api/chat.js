@@ -11,7 +11,7 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "No valid messages array provided" });
     }
 
-    // ─── Normale chat ───────────────────────────────────────
+    // ─── Normale chat ────────────────────────────────────────
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -28,18 +28,17 @@ export default async function handler(req, res) {
 
     const data = await response.json();
     if (!response.ok) return res.status(response.status).json({ error: "OpenAI failed", details: data });
-
     const reply = data.choices?.[0]?.message?.content?.trim() || "Ik help je zo snel mogelijk!";
 
-    // ─── Lead extractie + Zapier ────────────────────────────
+    // ─── Lead extractie + Zapier ─────────────────────────────
     if (sendLead && process.env.ZAPIER_WEBHOOK) {
       try {
+        // Alleen user + assistant berichten, geen system
         const gesprek = messages
           .filter(m => m.role !== "system")
           .map(m => (m.role === "user" ? "Bezoeker" : "Costa") + ": " + m.content)
           .join("\n");
 
-        // Laat AI de gegevens netjes extraheren
         const extractRes = await fetch("https://api.openai.com/v1/chat/completions", {
           method: "POST",
           headers: {
@@ -48,21 +47,24 @@ export default async function handler(req, res) {
           },
           body: JSON.stringify({
             model: "gpt-4o-mini",
-            max_tokens: 200,
+            max_tokens: 300,
             temperature: 0,
             messages: [
               {
                 role: "system",
-                content: `Extraheer de volgende gegevens uit dit gesprek en geef ALLEEN een JSON object terug, geen uitleg of markdown.
-Gebruik exacte korte waarden, bijvoorbeeld type_event is "verjaardag" niet "typeverjaardag".
-{
-  "naam": "voornaam van de bezoeker",
-  "contact": "telefoonnummer of e-mailadres",
-  "type_event": "verjaardag / bedrijfsborrel / feest / anders",
-  "datum": "gewenste datum van het event",
-  "personen": "aantal personen als getal"
-}
-Als een waarde niet gevonden is, gebruik dan "onbekend".`
+                content: `Lees het gesprek en extraheer de gevraagde gegevens. Geef ALLEEN een geldig JSON object terug zonder markdown of uitleg.
+
+Regels:
+- naam: alleen de voornaam van de bezoeker (niet "Costa" of "Bezoeker")
+- contact: telefoonnummer of e-mailadres van de bezoeker
+- type_event: één woord, kies uit: verjaardag, bedrijfsborrel, feest, anders
+- datum: de gewenste datum van het event
+- personen: alleen een getal
+
+Voorbeeld output:
+{"naam":"Jan","contact":"0612345678","type_event":"verjaardag","datum":"8 mei","personen":"30"}
+
+Als een waarde niet gevonden is gebruik dan "onbekend".`
               },
               {
                 role: "user",
@@ -73,37 +75,33 @@ Als een waarde niet gevonden is, gebruik dan "onbekend".`
         });
 
         const extractData = await extractRes.json();
-        const extractedText = extractData.choices?.[0]?.message?.content || "{}";
+        const rawText = extractData.choices?.[0]?.message?.content || "{}";
 
         let lead = {};
         try {
-          const clean = extractedText.replace(/```json|```/g, "").trim();
+          const clean = rawText.replace(/```json|```/g, "").trim();
           lead = JSON.parse(clean);
-        } catch (e) {}
+        } catch(e) {
+          console.error("JSON parse fout:", rawText);
+        }
 
-        // Stuur naar Zapier
         await fetch(process.env.ZAPIER_WEBHOOK, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             datum_aanvraag: new Date().toLocaleString("nl-NL"),
-            naam:           lead.naam       || "onbekend",
-            contact:        lead.contact    || "onbekend",
-            type_event:     lead.type_event || "onbekend",
-            datum_event:    lead.datum      || "onbekend",
-            personen:       lead.personen   || "onbekend",
-            conversatie:    gesprek.slice(0, 2000)
+            naam:        lead.naam        || "onbekend",
+            contact:     lead.contact     || "onbekend",
+            type_event:  lead.type_event  || "onbekend",
+            datum_event: lead.datum       || "onbekend",
+            personen:    lead.personen    || "onbekend",
+            conversatie: gesprek.slice(0, 2000)
           })
         });
 
-      } catch (e) {
-        console.error("Lead extractie fout:", e.message);
+      } catch(e) {
+        console.error("Lead fout:", e.message);
       }
     }
 
     return res.status(200).json({ reply });
-
-  } catch (error) {
-    return res.status(500).json({ error: "Server error", details: error?.message });
-  }
-}
