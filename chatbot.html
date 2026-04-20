@@ -421,9 +421,11 @@ ALGEMEEN:
   const quickEl  = document.getElementById("cc-quick");
   const sendEl   = document.getElementById("cc-send");
 
-  let history  = [];
-  let busy     = false;
-  let typingEl = null;
+  let history   = [];
+  let busy      = false;
+  let typingEl  = null;
+  let eventType = null;
+  let infoAsked = false;
 
   // ─── TOGGLE ───────────────────────────────────────────────
   toggleEl.addEventListener("click", () => {
@@ -503,6 +505,39 @@ ALGEMEEN:
     inputEl.value = "";
 
     history.push({ role: "user", content: text });
+
+    // Detecteer type event uit gebruikersinput
+    const eventTypes = ["verjaardag", "bedrijfsborrel", "feest", "anders", "borrel", "jubileum", "bruiloft"];
+    if (!eventType && eventTypes.some(e => text.toLowerCase().includes(e))) {
+      eventType = text;
+    }
+
+    // Als type event bekend is maar info/aanvraag vraag nog niet gesteld → stel hem nu
+    if (eventType && !infoAsked && !text.toLowerCase().includes("meer informatie") && !text.toLowerCase().includes("aanvraag") && !text.toLowerCase().includes("vrijblijvend")) {
+      const prevMessages = history.slice(0, -1);
+      const lastBotMsg = [...prevMessages].reverse().find(m => m.role === "assistant");
+      const lastBotLower = lastBotMsg ? lastBotMsg.content.toLowerCase() : "";
+      // Alleen stellen als de bot nog niet over personen/datum/contact heeft gevraagd
+      if (!lastBotLower.includes("personen") && !lastBotLower.includes("datum") && !lastBotLower.includes("naam") && !infoAsked) {
+        // Check of de gebruiker net het type event heeft opgegeven
+        const justGaveEventType = eventTypes.some(e => text.toLowerCase().includes(e));
+        if (justGaveEventType) {
+          infoAsked = true;
+          hideTypingDots && hideTypingDots();
+          await wait(600);
+          showTypingDots();
+          await wait(800);
+          hideTypingDots();
+          addBubble("Superleuk! 🎉 Wil je eerst meer informatie over wat wij kunnen bieden, of wil je direct een vrijblijvende aanvraag doen?", "bot");
+          history.push({ role: "assistant", content: "Superleuk! 🎉 Wil je eerst meer informatie over wat wij kunnen bieden, of wil je direct een vrijblijvende aanvraag doen?" });
+          setButtons(["Meer informatie 📋", "Vrijblijvende aanvraag doen ✅"]);
+          busy = false;
+          inputEl.disabled = false;
+          inputEl.focus();
+          return;
+        }
+      }
+    }
 
     showTypingDots();
 
@@ -600,6 +635,7 @@ ALGEMEEN:
         setButtons(["~20 personen", "~30 personen", "~40 personen", "50+"]);
       } else if (lower.includes("soort") || lower.includes("type event") || lower.includes("wat voor")) {
         setButtons(["Verjaardag 🎂", "Bedrijfsborrel 💼", "Feest 🎉", "Anders"]);
+        infoAsked = false;
       } else if (
         lower.includes("meer informatie") ||
         lower.includes("vrijblijvend") ||
