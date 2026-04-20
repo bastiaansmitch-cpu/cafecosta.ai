@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Café Costa Chatbot</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap');
+
+    :root {
+      --bg: #0d0d0d;
+      --surface: #161616;
+      --surface2: #1f1f1f;
+      --border: #2a2a2a;
+      --accent: #c9a84c;
+      --accent-dim: rgba(201,168,76,0.12);
+      --text: #f0ece3;
+      --text-dim: #888;
+      --radius: 18px;
+    }
+
+    #cc-toggle {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: var(--accent);
+      color: #000;
+      border-radius: 50%;
+      width: 58px;
+      height: 58px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 22px;
+      z-index: 9999;
+      box-shadow: 0 6px 28px rgba(201,168,76,0.35);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      border: none;
+    }
+
+    #cc-toggle:hover {
+      transform: scale(1.07);
+      box-shadow: 0 8px 36px rgba(201,168,76,0.5);
+    }
+
+    #cc-chat {
+      position: fixed;
+      bottom: 96px;
+      right: 24px;
+      width: 370px;
+      height: 560px;
+      background: var(--bg);
+      color: var(--text);
+      border-radius: var(--radius);
+      display: none;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+      z-index: 9999;
+      font-family: 'DM Sans', sans-serif;
+      border: 1px solid var(--border);
+      animation: slideUp 0.25s ease;
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    #cc-header {
+      padding: 16px 18px;
+      background: var(--surface);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    #cc-header-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+
+    #cc-header-info {
+      flex: 1;
+    }
+
+    #cc-header-name {
+      font-family: 'DM Serif Display', serif;
+      font-size: 15px;
+      letter-spacing: 0.01em;
+      color: var(--text);
+    }
+
+    #cc-header-sub {
+      font-size: 11px;
+      color: var(--accent);
+      font-weight: 400;
+      letter-spacing: 0.03em;
+    }
+
+    #cc-online {
+      width: 8px;
+      height: 8px;
+      background: #4caf50;
+      border-radius: 50%;
+      box-shadow: 0 0 6px rgba(76,175,80,0.5);
+    }
+
+    #cc-messages {
+      flex: 1;
+      padding: 16px 14px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border) transparent;
+    }
+
+    #cc-messages::-webkit-scrollbar { width: 4px; }
+    #cc-messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    .cc-bubble {
+      max-width: 82%;
+      padding: 10px 14px;
+      border-radius: 14px;
+      font-size: 13.5px;
+      line-height: 1.5;
+      animation: fadeIn 0.2s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .cc-bubble.bot {
+      background: var(--surface);
+      border-bottom-left-radius: 4px;
+      color: var(--text);
+      align-self: flex-start;
+      border: 1px solid var(--border);
+    }
+
+    .cc-bubble.user {
+      background: var(--accent);
+      color: #000;
+      font-weight: 500;
+      align-self: flex-end;
+      border-bottom-right-radius: 4px;
+    }
+
+    .cc-bubble a {
+      color: var(--accent);
+      text-decoration: underline;
+    }
+
+    .cc-bubble.bot a { color: var(--accent); }
+    .cc-bubble.user a { color: #000; }
+
+    .cc-typing {
+      display: flex;
+      gap: 5px;
+      align-items: center;
+      padding: 12px 14px;
+    }
+
+    .cc-dot {
+      width: 6px;
+      height: 6px;
+      background: var(--text-dim);
+      border-radius: 50%;
+      animation: bounce 1.2s infinite;
+    }
+
+    .cc-dot:nth-child(2) { animation-delay: 0.2s; }
+    .cc-dot:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes bounce {
+      0%, 60%, 100% { transform: translateY(0); }
+      30% { transform: translateY(-5px); }
+    }
+
+    #cc-quick {
+      padding: 6px 12px 8px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .cc-btn {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 7px 12px;
+      cursor: pointer;
+      border-radius: 20px;
+      font-size: 12.5px;
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 400;
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
+    }
+
+    .cc-btn:hover {
+      background: var(--accent-dim);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    #cc-input-wrap {
+      border-top: 1px solid var(--border);
+      padding: 10px 12px;
+      background: var(--surface);
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    #cc-input {
+      flex: 1;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 13px;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 13.5px;
+      font-family: 'DM Sans', sans-serif;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    #cc-input:focus { border-color: var(--accent); }
+    #cc-input::placeholder { color: var(--text-dim); }
+
+    #cc-send {
+      background: var(--accent);
+      border: none;
+      border-radius: 10px;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: opacity 0.15s;
+      color: #000;
+      font-size: 15px;
+    }
+
+    #cc-send:hover { opacity: 0.85; }
+
+    @media (max-width: 480px) {
+      #cc-chat {
+        right: 10px;
+        left: 10px;
+        bottom: 84px;
+        width: auto;
+        height: 72vh;
+      }
+      #cc-toggle {
+        right: 16px;
+        bottom: 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<button id="cc-toggle" aria-label="Open chat">🍻</button>
+
+<div id="cc-chat" role="dialog" aria-label="Café Costa chat">
+  <div id="cc-header">
+    <div id="cc-header-avatar">🍺</div>
+    <div id="cc-header-info">
+      <div id="cc-header-name">Café Costa</div>
+      <div id="cc-header-sub">Uw persoonlijke assistent</div>
+    </div>
+    <div id="cc-online"></div>
+  </div>
+  <div id="cc-messages" aria-live="polite"></div>
+  <div id="cc-quick"></div>
+  <div id="cc-input-wrap">
+    <input id="cc-input" placeholder="Stel een vraag..." autocomplete="off" aria-label="Typ je bericht" />
+    <button id="cc-send" aria-label="Verstuur">➤</button>
+  </div>
+</div>
+
+<script>
+  // ─── CONFIG ───────────────────────────────────────────────
+  const AI_ENDPOINT    = "https://project-9aq9q.vercel.app/api/chat";
+  const ZAPIER_WEBHOOK = "https://hooks.zapier.com/hooks/catch/27262179/ujdj1mj/";
+  const WHATSAPP_NUMBER = "31641806311";
+
+  const SYSTEM_PROMPT = `Je bent Costa, de vriendelijke chatbot van Café Costa.
+
+STIJL:
+- Kort, warm en informeel — max 2-3 zinnen per bericht
+- Stel altijd 1 logische vervolgvraag
+- Spreek altijd Nederlands
+- Gebruik spaarzaam emoji's
+
+OPENINGSTIJDEN:
+- Donderdag: 19:00 – 02:00
+- Vrijdag: 19:00 – 04:00
+- Zaterdag: 17:00 – 04:00
+- Naast deze vaste tijden zijn er regelmatig extra openingstijden
+- Het wekelijkse programma staat op Instagram: instagram.com/cafecostaeindhoven
+- Verwijs altijd naar Instagram voor de meest actuele openingstijden
+
+RUIMTE (eerste verdieping):
+- Geschikt voor 20 tot 50 personen
+- Eigen bar met eigen bartender inbegrepen
+- Licht en geluid volledig geregeld
+- Beamer mogelijk (klant neemt zelf laptop mee met HDMI)
+- DJ boeken via Café Costa: €300 meerprijs
+- Eigen DJ meenemen mag, borg €250 voor gebruik Pioneer all-in-one DJ systeem
+- Drankkeuze flexibel: bier/fris/wijn of uitgebreider met mixdranken (prijsverschil)
+- Geen zaalhuur
+- Minimale barbesteding: €600 vooraf te betalen, wordt van de uiteindelijke rekening afgetrokken
+- Arrangement 1 — Bier/fris/wijn onbeperkt: €12,50 p.p. per uur, minimum 4 uur
+- Arrangement 2 — Bier/fris/wijn + standaard mixdranken onbeperkt: €19,50 p.p. per uur, minimum 4 uur
+- Geen arrangement? Dan wordt er achteraf afgerekend op basis van consumptie (barbesteding van €600 geldt altijd)
+- Foto's van de ruimte: cafecosta.nl
+
+GEVONDEN VOORWERPEN:
+- Op te halen tijdens openingstijden aan de bar
+- Voor vragen: stuur een berichtje via onze Instagram pagina
+- Verloren kluissleutel: ophalen kan tot 22:00 uur
+- Voor een kluissleutel rekenen we €15 voor een nieuw slot (vooraf te betalen)
+
+AANVRAAG FLOW (ruimte huren):
+Verzamel stap voor stap: 1) type event, 2) aantal personen, 3) datum, 4) naam + telefoon of e-mail.
+Stel maar één vraag tegelijk. Zodra alles compleet is, bevestig de aanvraag warm en vertel dat het team snel contact opneemt.
+
+MEDEWERKER SPREKEN:
+Als iemand een medewerker wil spreken of een afspraak wil maken, verzamel dan:
+1. Naam
+2. Telefoonnummer
+3. Gewenst moment (dag + tijdstip)
+Sluit dan af met exact deze zin (niets anders): "OPEN_MAIL"
+Dit is een speciaal signaalwoord — schrijf het exact zo, dan regelt de chatbot de rest.
+
+ALGEMEEN:
+- Weet je iets niet zeker? Verwijs door naar cafecosta.nl of de Instagram pagina
+- Verzin nooit informatie`;
+
+  const chatEl   = document.getElementById("cc-chat");
+  const toggleEl = document.getElementById("cc-toggle");
+  const msgsEl   = document.getElementById("cc-messages");
+  const inputEl  = document.getElementById("cc-input");
+  const quickEl  = document.getElementById("cc-quick");
+  const sendEl   = document.getElementById("cc-send");
+
+  let history  = [];
+  let busy     = false;
+  let typingEl = null;
+
+  // ─── TOGGLE ───────────────────────────────────────────────
+  toggleEl.addEventListener("click", () => {
+    const open = chatEl.style.display === "flex";
+    chatEl.style.display = open ? "none" : "flex";
+    chatEl.style.flexDirection = "column";
+    if (!open && history.length === 0) start();
+  });
+
+  // ─── HELPERS ──────────────────────────────────────────────
+  function wait(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+  function escapeHtml(t) {
+    return t.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  }
+
+  function addBubble(html, role) {
+    const div = document.createElement("div");
+    div.className = "cc-bubble " + role;
+    div.innerHTML = html;
+    msgsEl.appendChild(div);
+    msgsEl.scrollTop = msgsEl.scrollHeight;
+  }
+
+  function showTypingDots() {
+    typingEl = document.createElement("div");
+    typingEl.className = "cc-bubble bot cc-typing";
+    typingEl.innerHTML = '<div class="cc-dot"></div><div class="cc-dot"></div><div class="cc-dot"></div>';
+    msgsEl.appendChild(typingEl);
+    msgsEl.scrollTop = msgsEl.scrollHeight;
+  }
+
+  function hideTypingDots() {
+    if (typingEl) { typingEl.remove(); typingEl = null; }
+  }
+
+  function setButtons(labels) {
+    quickEl.innerHTML = "";
+    labels.forEach(label => {
+      const btn = document.createElement("button");
+      btn.className = "cc-btn";
+      btn.textContent = label;
+      btn.addEventListener("click", () => {
+        if (!busy) sendMessage(label);
+      });
+      quickEl.appendChild(btn);
+    });
+    // Scroll altijd naar beneden na het tonen van knoppen
+    setTimeout(() => { msgsEl.scrollTop = msgsEl.scrollHeight; }, 50);
+  }
+
+  function defaultButtons() {
+    setButtons(["🎉 Ruimte huren", "📅 Reserveren", "🍻 Openingstijden"]);
+  }
+
+  // ─── START ────────────────────────────────────────────────
+  async function start() {
+    showTypingDots();
+    await wait(700);
+    hideTypingDots();
+    addBubble("Hoi! 👋 Welkom bij Café Costa. Kan ik je ergens mee helpen?", "bot");
+    defaultButtons();
+  }
+
+  // ─── SEND ─────────────────────────────────────────────────
+  async function sendMessage(text) {
+    text = text.trim();
+    if (!text || busy) return;
+
+    busy = true;
+    inputEl.disabled = true;
+    quickEl.innerHTML = "";
+
+    addBubble(escapeHtml(text), "user");
+    inputEl.value = "";
+
+    history.push({ role: "user", content: text });
+
+    showTypingDots();
+
+    try {
+      // Stuur systeem + volledige geschiedenis als messages array
+      const messages = [
+        { role: "system", content: SYSTEM_PROMPT },
+        ...history.slice(-12)
+      ];
+
+      // Stuur sendLead:true mee als aanvraag al compleet lijkt
+      const historyLower = history.map(m => m.content).join(" ").toLowerCase();
+      const lijktCompleet = historyLower.includes("genoteerd") || historyLower.includes("snel contact");
+
+      const res = await fetch(AI_ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages, sendLead: lijktCompleet })
+      });
+
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const data = await res.json();
+      const reply = (data.reply || data.message || "").trim() || "Ik help je zo snel mogelijk! 😊";
+
+      // Minimale vertraging zodat het natuurlijk aanvoelt
+      await wait(Math.min(300 + reply.length * 4, 1000));
+      hideTypingDots();
+
+      history.push({ role: "assistant", content: reply });
+      addBubble(reply, "bot");
+
+      // Detecteer OPEN_MAIL signaal van AI
+      if (reply.includes("OPEN_MAIL")) {
+        hideTypingDots();
+        addBubble("Super! Ik open je mailprogramma met alle gegevens al ingevuld 📧", "bot");
+        await wait(600);
+        openMail();
+        setButtons(["Nog een vraag stellen"]);
+        busy = false;
+        inputEl.disabled = false;
+        inputEl.focus();
+        return;
+      }
+
+      const lower = reply.toLowerCase();
+
+      // Detecteer of aanvraag compleet is (alleen als contact al is ontvangen)
+      // Kijk of er al een telefoonnummer of e-mail in de geschiedenis zit
+      const heeftContact = history.some(m =>
+        m.role === "user" && (
+          /\d{6,}/.test(m.content) ||
+          m.content.includes("@")
+        )
+      );
+
+      const leadCompleet = heeftContact && (
+        lower.includes("aanvraag is compleet") ||
+        lower.includes("aanvraag compleet") ||
+        lower.includes("hebben nu alles") ||
+        lower.includes("alles genoteerd") ||
+        lower.includes("we hebben je") ||
+        lower.includes("team neemt snel") ||
+        lower.includes("nemen snel contact") ||
+        lower.includes("andere vragen")
+      );
+
+      if (leadCompleet) {
+        // Stuur lead naar Zapier/Sheets
+        try {
+          await fetch(AI_ENDPOINT, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              messages: [{ role: "system", content: SYSTEM_PROMPT }, ...history.slice(-12)],
+              sendLead: true
+            })
+          });
+        } catch(e) {}
+        // Vraag of ze direct willen reserveren via WhatsApp
+        await wait(600);
+        addBubble("Wil je de aanvraag direct bevestigen via WhatsApp? Dan kunnen we meteen aan de slag 🍻", "bot");
+        setButtons(["✅ Ja, via WhatsApp", "Nee, bedankt", "Nog een vraag"]);
+      } else if (lower.includes("personen") || lower.includes("hoeveel mensen")) {
+        setButtons(["~20 personen", "~30 personen", "~40 personen", "50+"]);
+      } else if (lower.includes("soort") || lower.includes("type event") || lower.includes("wat voor")) {
+        setButtons(["Verjaardag 🎂", "Bedrijfsborrel 💼", "Feest 🎉", "Anders"]);
+      } else if (lower.includes("datum") || lower.includes("welke dag") || lower.includes("wanneer")) {
+        quickEl.innerHTML = "";
+      } else {
+        defaultButtons();
+      }
+
+    } catch (e) {
+      hideTypingDots();
+      addBubble("Sorry, even een storing 😅 Probeer opnieuw of bel ons gerust.", "bot");
+      defaultButtons();
+    }
+
+    busy = false;
+    inputEl.disabled = false;
+    inputEl.focus();
+  }
+
+  // ─── ZAPIER ───────────────────────────────────────────────
+  function sendToZapier() {
+    const convo = history.map(m =>
+      (m.role === "user" ? "Bezoeker" : "Costa") + ": " + m.content
+    ).join("\n");
+    fetch(ZAPIER_WEBHOOK, {
+      method: "POST", mode: "no-cors",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ datum: new Date().toLocaleString("nl-NL"), conversatie: convo.slice(0, 800) })
+    }).catch(() => {});
+  }
+
+  // ─── WHATSAPP ─────────────────────────────────────────────
+  function openWhatsApp() {
+    const txt = history.filter(m => m.role === "user").map(m => m.content).join(" | ");
+    window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent("Aanvraag Café Costa:\n" + txt)}`, "_blank");
+  }
+
+  // ─── MAIL ─────────────────────────────────────────────────
+  function openMail() {
+    const gesprek = history.map(m =>
+      (m.role === "user" ? "Bezoeker" : "Costa") + ": " + m.content
+    ).join("\n");
+    const subject = encodeURIComponent("Afspraakverzoek via chatbot - Caf\u00e9 Costa");
+    const body = encodeURIComponent("Hallo Mitch,\n\nVia de chatbot is een afspraakverzoek binnengekomen. Hieronder het volledige gesprek:\n\n" + gesprek);
+    window.open("mailto:mitch@cafecosta.nl?subject=" + subject + "&body=" + body, "_blank");
+  }
+
+  // ─── EVENTS ───────────────────────────────────────────────
+  inputEl.addEventListener("keydown", e => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage(inputEl.value);
+    }
+  });
+
+  sendEl.addEventListener("click", () => sendMessage(inputEl.value));
+
+  document.addEventListener("click", e => {
+    if (!e.target.matches(".cc-btn")) return;
+    const label = e.target.textContent.trim();
+
+    if (label === "✅ Ja, via WhatsApp") {
+      openWhatsApp();
+      quickEl.innerHTML = "";
+      addBubble("Top! WhatsApp is geopend 🍻 Tot snel!", "bot");
+      setTimeout(defaultButtons, 1500);
+    } else if (label === "Nee, bedankt") {
+      quickEl.innerHTML = "";
+      addBubble("Geen probleem! We nemen snel contact met je op 😊", "bot");
+      setTimeout(defaultButtons, 500);
+    } else if (label === "Nog een vraag") {
+      quickEl.innerHTML = "";
+      addBubble("Tuurlijk, stel gerust je vraag! 😄", "bot");
+      defaultButtons();
+    }
+  });
+</script>
+
+</body>
+</html>
