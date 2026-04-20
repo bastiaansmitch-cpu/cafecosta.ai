@@ -6,7 +6,7 @@ export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
   try {
-    const { messages, sendLead } = req.body || {};
+    const { messages, sendLead, knownData } = req.body || {};
     if (!messages || !Array.isArray(messages)) {
       return res.status(400).json({ error: "No valid messages array provided" });
     }
@@ -49,20 +49,16 @@ export default async function handler(req, res) {
             messages: [
               {
                 role: "system",
-                content: `Analyseer dit gesprek tussen een bezoeker en een chatbot van Café Costa. Extraheer de onderstaande gegevens en retourneer ALLEEN een JSON object, geen uitleg, geen markdown.
+                content: `Analyseer dit gesprek en extraheer ALLEEN een JSON object, geen uitleg of markdown.
 
 Velden:
-- naam: de voornaam van de bezoeker (staat vaak in een zin zoals "ik ben Jan" of "Jan 0612345678" of gewoon "Jan")
-- contact: het telefoonnummer of e-mailadres van de bezoeker
-- type_event: het type feest/event, kies exact één van: verjaardag, bedrijfsborrel, feest, anders
-- datum: de gewenste datum van het event (bijv "8 mei" of "8 juni")
-- personen: het aantal personen als getal
+- naam: voornaam van de bezoeker (staat vaak voor of na een telefoonnummer, of als "ik ben Jan")
+- contact: telefoonnummer (6+ cijfers) of e-mailadres van de bezoeker
+- datum: gewenste datum van het event
+- personen: aantal personen als getal
 
-Zoek goed in de bezoeker-berichten. Telefoonnummers zijn reeksen van 6 of meer cijfers. Namen staan vaak vlak voor of na een telefoonnummer.
-
-Voorbeeld output: {"naam":"Jan","contact":"0641806311","type_event":"verjaardag","datum":"8 mei","personen":"30"}
-
-Gebruik "onbekend" als je een waarde niet kunt vinden.`
+Gebruik "onbekend" als je een waarde niet kunt vinden.
+Voorbeeld: {"naam":"Jan","contact":"0641806311","datum":"8 mei","personen":"30"}`
               },
               { role: "user", content: gesprek }
             ]
@@ -77,6 +73,11 @@ Gebruik "onbekend" als je een waarde niet kunt vinden.`
           lead = JSON.parse(rawText.replace(/```json|```/g, "").trim());
         } catch(e) {}
 
+        // Gebruik knownData voor type_event als die beschikbaar is
+        const typeEvent = (knownData && knownData.type_event && knownData.type_event !== "onbekend")
+          ? knownData.type_event
+          : (lead.type_event || "onbekend");
+
         await fetch(process.env.ZAPIER_WEBHOOK, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -84,7 +85,7 @@ Gebruik "onbekend" als je een waarde niet kunt vinden.`
             datum_aanvraag: new Date().toLocaleString("nl-NL"),
             naam:        lead.naam        || "onbekend",
             contact:     lead.contact     || "onbekend",
-            type_event:  lead.type_event  || "onbekend",
+            type_event:  typeEvent,
             datum_event: lead.datum       || "onbekend",
             personen:    lead.personen    || "onbekend",
             conversatie: gesprek.slice(0, 2000)
