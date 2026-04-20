@@ -397,17 +397,19 @@ Stel maar één vraag tegelijk. Vraag bij stap 4 altijd op deze manier: "Laat je
 Zodra alles compleet is, bevestig de aanvraag warm en vertel dat het team snel contact opneemt.
 
 NA HET TYPE EVENT:
-Zodra je het type event weet, stel dan eerst een vriendelijke vraag zoals:
-"Heb je al een idee hoe je de avond wil invullen, of wil je meer weten over wat wij kunnen bieden qua locatie, DJ of arrangementen?"
-Wacht op het antwoord. Als iemand meer wil weten, geef dan een korte enthousiaste introductie over Café Costa:
-- Gezellig café in Eindhoven met een aparte ruimte op de eerste verdieping
-- Eigen bar, bartender, licht en geluid
-- DJ mogelijk, eigen DJ welkom
-- Twee drankopties: bier/fris/wijn of inclusief mixdranken
-- Foto's op cafecosta.nl
+Zodra je het type event weet, stel dan ALTIJD deze vraag:
+"Wil je meer informatie over wat wij kunnen bieden, of wil je direct een vrijblijvende aanvraag doen?"
 
-Sluit altijd af met: "Wil je een aanvraag indienen zodat we alles kunnen bespreken?" en stuur zo richting de aanvraag.
-Als iemand direct aanvraag wil indienen, ga dan meteen door naar het aantal personen.
+Als iemand meer informatie wil:
+- Geef een korte enthousiaste introductie over Café Costa
+- Eigen ruimte op de eerste verdieping in Eindhoven, 20-50 personen
+- Eigen bar, bartender, licht en geluid inbegrepen
+- DJ mogelijk of eigen DJ welkom
+- Drie drankopties: op rekening, of een van de twee afkooparrangementen
+- Foto's op cafecosta.nl
+- Sluit ALTIJD af met: "Wil je een vrijblijvende aanvraag doen zodat we alles kunnen bespreken?"
+
+Als iemand direct een aanvraag wil doen, ga dan meteen door naar het aantal personen.
 
 MEDEWERKER SPREKEN:
 Als iemand een medewerker wil spreken of een afspraak wil maken, verzamel dan:
@@ -616,9 +618,15 @@ ALGEMEEN:
         lower.includes("wat wij kunnen bieden") ||
         lower.includes("aanvraag indienen") ||
         lower.includes("wensen voor de avond") ||
-        lower.includes("kunnen bieden qua")
+        lower.includes("kunnen bieden qua") ||
+        lower.includes("meer informatie") ||
+        lower.includes("vrijblijvend") ||
+        lower.includes("doorsturen") ||
+        lower.includes("verder gaan") ||
+        lower.includes("wil je weten") ||
+        lower.includes("nog vragen")
       ) {
-        setButtons(["Vertel meer over de locatie", "Info over DJ 🎧", "Info over arrangementen 🍺", "Aanvraag indienen ✅"]);
+        setButtons(["Meer informatie 📋", "Vrijblijvende aanvraag doen ✅"]);
       } else if (lower.includes("datum") || lower.includes("welke dag") || lower.includes("wanneer")) {
         quickEl.innerHTML = "";
       } else if (
