@@ -11,7 +11,6 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "No valid messages array provided" });
     }
 
-    // ─── Normale chat ────────────────────────────────────────
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -30,10 +29,8 @@ export default async function handler(req, res) {
     if (!response.ok) return res.status(response.status).json({ error: "OpenAI failed", details: data });
     const reply = data.choices?.[0]?.message?.content?.trim() || "Ik help je zo snel mogelijk!";
 
-    // ─── Lead extractie + Zapier ─────────────────────────────
     if (sendLead && process.env.ZAPIER_WEBHOOK) {
       try {
-        // Alleen user + assistant berichten, geen system
         const gesprek = messages
           .filter(m => m.role !== "system")
           .map(m => (m.role === "user" ? "Bezoeker" : "Costa") + ": " + m.content)
@@ -52,19 +49,7 @@ export default async function handler(req, res) {
             messages: [
               {
                 role: "system",
-                content: `Lees het gesprek en extraheer de gevraagde gegevens. Geef ALLEEN een geldig JSON object terug zonder markdown of uitleg.
-
-Regels:
-- naam: alleen de voornaam van de bezoeker (niet "Costa" of "Bezoeker")
-- contact: telefoonnummer of e-mailadres van de bezoeker
-- type_event: één woord, kies uit: verjaardag, bedrijfsborrel, feest, anders
-- datum: de gewenste datum van het event
-- personen: alleen een getal
-
-Voorbeeld output:
-{"naam":"Jan","contact":"0612345678","type_event":"verjaardag","datum":"8 mei","personen":"30"}
-
-Als een waarde niet gevonden is gebruik dan "onbekend".`
+                content: "Lees het gesprek en extraheer de gevraagde gegevens. Geef ALLEEN een geldig JSON object terug zonder markdown of uitleg. Regels: naam is alleen de voornaam van de bezoeker, contact is telefoonnummer of e-mailadres, type_event is een van: verjaardag, bedrijfsborrel, feest, anders, datum is de gewenste datum, personen is alleen een getal. Voorbeeld: {\"naam\":\"Jan\",\"contact\":\"0612345678\",\"type_event\":\"verjaardag\",\"datum\":\"8 mei\",\"personen\":\"30\"}. Als een waarde niet gevonden is gebruik dan onbekend."
               },
               {
                 role: "user",
@@ -79,11 +64,8 @@ Als een waarde niet gevonden is gebruik dan "onbekend".`
 
         let lead = {};
         try {
-          const clean = rawText.replace(/```json|```/g, "").trim();
-          lead = JSON.parse(clean);
-        } catch(e) {
-          console.error("JSON parse fout:", rawText);
-        }
+          lead = JSON.parse(rawText.replace(/```json|```/g, "").trim());
+        } catch(e) {}
 
         await fetch(process.env.ZAPIER_WEBHOOK, {
           method: "POST",
@@ -105,3 +87,8 @@ Als een waarde niet gevonden is gebruik dan "onbekend".`
     }
 
     return res.status(200).json({ reply });
+
+  } catch(error) {
+    return res.status(500).json({ error: "Server error", details: error?.message });
+  }
+}
