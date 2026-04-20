@@ -5,26 +5,27 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Café Costa Chatbot</title>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@500;600&family=DM+Sans:wght@300;400;500&display=swap');
 
     :root {
-      --bg: #0d0d0d;
-      --surface: #161616;
-      --surface2: #1f1f1f;
-      --border: #2a2a2a;
-      --accent: #c9a84c;
-      --accent-dim: rgba(201,168,76,0.12);
-      --text: #f0ece3;
-      --text-dim: #888;
-      --radius: 18px;
+      --bg: #12001a;
+      --surface: #1e0029;
+      --surface2: #2a0038;
+      --border: #3d005a;
+      --accent: #e8006e;
+      --accent2: #ff4da6;
+      --accent-dim: rgba(232,0,110,0.15);
+      --text: #f5eeff;
+      --text-dim: #9980aa;
+      --radius: 16px;
     }
 
     #cc-toggle {
       position: fixed;
       bottom: 24px;
       right: 24px;
-      background: var(--accent);
-      color: #000;
+      background: linear-gradient(135deg, #e8006e, #ff4da6);
+      color: #fff;
       border-radius: 30px;
       height: 52px;
       padding: 0 20px 0 14px;
@@ -34,7 +35,7 @@
       cursor: pointer;
       font-size: 20px;
       z-index: 9999;
-      box-shadow: 0 6px 28px rgba(201,168,76,0.35);
+      box-shadow: 0 6px 28px rgba(232,0,110,0.45);
       transition: transform 0.2s ease, box-shadow 0.2s ease;
       border: none;
       font-family: 'DM Sans', sans-serif;
@@ -43,28 +44,29 @@
     }
     #cc-toggle-label {
       font-size: 14px;
-      font-weight: 500;
-      letter-spacing: 0.01em;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
     }
 
     #cc-toggle:hover {
-      transform: scale(1.07);
-      box-shadow: 0 8px 36px rgba(201,168,76,0.5);
+      transform: scale(1.05);
+      box-shadow: 0 8px 36px rgba(232,0,110,0.6);
     }
 
     #cc-chat {
       position: fixed;
-      bottom: 96px;
+      bottom: 90px;
       right: 24px;
-      width: 370px;
-      height: 560px;
+      width: 375px;
+      height: 570px;
       background: var(--bg);
       color: var(--text);
       border-radius: var(--radius);
       display: none;
       flex-direction: column;
       overflow: hidden;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+      box-shadow: 0 20px 60px rgba(232,0,110,0.25), 0 4px 40px rgba(0,0,0,0.8);
       z-index: 9999;
       font-family: 'DM Sans', sans-serif;
       border: 1px solid var(--border);
@@ -77,8 +79,8 @@
     }
 
     #cc-header {
-      padding: 16px 18px;
-      background: var(--surface);
+      padding: 14px 18px;
+      background: linear-gradient(135deg, #2a0038, #1e0029);
       display: flex;
       align-items: center;
       gap: 10px;
@@ -87,15 +89,16 @@
     }
 
     #cc-header-avatar {
-      width: 36px;
-      height: 36px;
+      width: 38px;
+      height: 38px;
       border-radius: 50%;
-      background: var(--accent);
+      background: linear-gradient(135deg, #e8006e, #ff4da6);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 16px;
+      font-size: 17px;
       flex-shrink: 0;
+      box-shadow: 0 2px 10px rgba(232,0,110,0.4);
     }
 
     #cc-header-info {
@@ -103,15 +106,17 @@
     }
 
     #cc-header-name {
-      font-family: 'DM Serif Display', serif;
-      font-size: 15px;
-      letter-spacing: 0.01em;
+      font-family: 'Oswald', sans-serif;
+      font-size: 16px;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
       color: var(--text);
     }
 
     #cc-header-sub {
       font-size: 11px;
-      color: var(--accent);
+      color: var(--accent2);
       font-weight: 400;
       letter-spacing: 0.03em;
     }
@@ -163,8 +168,8 @@
     }
 
     .cc-bubble.user {
-      background: var(--accent);
-      color: #000;
+      background: linear-gradient(135deg, #e8006e, #ff4da6);
+      color: #fff;
       font-weight: 500;
       align-self: flex-end;
       border-bottom-right-radius: 4px;
@@ -224,8 +229,8 @@
 
     .cc-btn:hover {
       background: var(--accent-dim);
-      border-color: var(--accent);
-      color: var(--accent);
+      border-color: var(--accent2);
+      color: var(--accent2);
     }
 
     #cc-input-wrap {
@@ -255,7 +260,7 @@
     #cc-input::placeholder { color: var(--text-dim); }
 
     #cc-send {
-      background: var(--accent);
+      background: linear-gradient(135deg, #e8006e, #ff4da6);
       border: none;
       border-radius: 10px;
       width: 36px;
@@ -266,7 +271,7 @@
       cursor: pointer;
       flex-shrink: 0;
       transition: opacity 0.15s;
-      color: #000;
+      color: #fff;
       font-size: 15px;
     }
 
