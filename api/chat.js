@@ -34,7 +34,12 @@ export default async function handler(req, res) {
     // ─── Lead extractie + Zapier ────────────────────────────
     if (sendLead && process.env.ZAPIER_WEBHOOK) {
       try {
-        // Laat AI de gegevens extraheren uit het gesprek
+        const gesprek = messages
+          .filter(m => m.role !== "system")
+          .map(m => (m.role === "user" ? "Bezoeker" : "Costa") + ": " + m.content)
+          .join("\n");
+
+        // Laat AI de gegevens netjes extraheren
         const extractRes = await fetch("https://api.openai.com/v1/chat/completions", {
           method: "POST",
           headers: {
@@ -48,21 +53,20 @@ export default async function handler(req, res) {
             messages: [
               {
                 role: "system",
-                content: `Extraheer de volgende gegevens uit dit gesprek en geef alleen JSON terug, geen uitleg:
+                content: `Extraheer de volgende gegevens uit dit gesprek en geef ALLEEN een JSON object terug, geen uitleg of markdown.
+Gebruik exacte korte waarden, bijvoorbeeld type_event is "verjaardag" niet "typeverjaardag".
 {
-  "naam": "...",
-  "contact": "...",
-  "type_event": "...",
-  "datum": "...",
-  "personen": "..."
+  "naam": "voornaam van de bezoeker",
+  "contact": "telefoonnummer of e-mailadres",
+  "type_event": "verjaardag / bedrijfsborrel / feest / anders",
+  "datum": "gewenste datum van het event",
+  "personen": "aantal personen als getal"
 }
 Als een waarde niet gevonden is, gebruik dan "onbekend".`
               },
               {
                 role: "user",
-                content: messages.filter(m => m.role !== "system").map(m =>
-                  (m.role === "user" ? "Bezoeker" : "Costa") + ": " + m.content
-                ).join("\n")
+                content: gesprek
               }
             ]
           })
@@ -70,12 +74,12 @@ Als een waarde niet gevonden is, gebruik dan "onbekend".`
 
         const extractData = await extractRes.json();
         const extractedText = extractData.choices?.[0]?.message?.content || "{}";
-        let lead = {};
-        try { lead = JSON.parse(extractedText); } catch (e) {}
 
-        const conversatie = messages.filter(m => m.role !== "system").map(m =>
-          (m.role === "user" ? "Bezoeker" : "Costa") + ": " + m.content
-        ).join("\n");
+        let lead = {};
+        try {
+          const clean = extractedText.replace(/```json|```/g, "").trim();
+          lead = JSON.parse(clean);
+        } catch (e) {}
 
         // Stuur naar Zapier
         await fetch(process.env.ZAPIER_WEBHOOK, {
@@ -83,16 +87,17 @@ Als een waarde niet gevonden is, gebruik dan "onbekend".`
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             datum_aanvraag: new Date().toLocaleString("nl-NL"),
-            naam:           lead.naam        || "onbekend",
-            contact:        lead.contact     || "onbekend",
-            type_event:     lead.type_event  || "onbekend",
-            datum_event:    lead.datum       || "onbekend",
-            personen:       lead.personen    || "onbekend",
-            conversatie:    conversatie.slice(0, 2000)
+            naam:           lead.naam       || "onbekend",
+            contact:        lead.contact    || "onbekend",
+            type_event:     lead.type_event || "onbekend",
+            datum_event:    lead.datum      || "onbekend",
+            personen:       lead.personen   || "onbekend",
+            conversatie:    gesprek.slice(0, 2000)
           })
         });
+
       } catch (e) {
-        console.error("Lead extractie fout:", e);
+        console.error("Lead extractie fout:", e.message);
       }
     }
 
