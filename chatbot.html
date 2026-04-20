@@ -616,15 +616,25 @@ ALGEMEEN:
         )
       );
 
-      const leadCompleet = heeftContact && (
+      // Detecteer of er ook een aanvraag flow actief is
+      const heeftAanvraag = history.some(m =>
+        m.role === "user" && (
+          m.content.toLowerCase().includes("aanvraag") ||
+          m.content.toLowerCase().includes("reserv") ||
+          m.content.toLowerCase().includes("huren") ||
+          m.content.toLowerCase().includes("personen") ||
+          m.content === "Vrijblijvende aanvraag doen ✅"
+        )
+      );
+
+      const leadCompleet = heeftContact && heeftAanvraag && (
         lower.includes("aanvraag is compleet") ||
         lower.includes("aanvraag compleet") ||
         lower.includes("hebben nu alles") ||
         lower.includes("alles genoteerd") ||
         lower.includes("we hebben je") ||
         lower.includes("team neemt snel") ||
-        lower.includes("nemen snel contact") ||
-        lower.includes("andere vragen")
+        lower.includes("nemen snel contact")
       );
 
       if (leadCompleet) {
