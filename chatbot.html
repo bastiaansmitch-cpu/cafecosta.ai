@@ -514,7 +514,13 @@ ALGEMEEN:
     // Detecteer type event uit gebruikersinput
     const eventTypes = ["verjaardag", "bedrijfsborrel", "feest", "anders", "borrel", "jubileum", "bruiloft"];
     if (!eventType && eventTypes.some(e => text.toLowerCase().includes(e))) {
-      eventType = text;
+      // Sla alleen het type op zonder emoji
+      eventType = text.replace(/[^\w\s]/gu, "").trim().toLowerCase();
+      // Normaliseer naar standaard waarde
+      if (eventType.includes("verjaardag")) eventType = "verjaardag";
+      else if (eventType.includes("bedrijfsborrel") || eventType.includes("borrel")) eventType = "bedrijfsborrel";
+      else if (eventType.includes("feest")) eventType = "feest";
+      else eventType = "anders";
     }
 
     // Als type event bekend is maar info/aanvraag vraag nog niet gesteld → stel hem nu
@@ -579,7 +585,8 @@ ALGEMEEN:
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               messages: [{ role: "system", content: SYSTEM_PROMPT }, ...history.slice(-12)],
-              sendLead: true
+              sendLead: true,
+              knownData: { type_event: eventType || "onbekend" }
             })
           });
         } catch(e) {}
@@ -628,7 +635,8 @@ ALGEMEEN:
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               messages: [{ role: "system", content: SYSTEM_PROMPT }, ...history.slice(-12)],
-              sendLead: true
+              sendLead: true,
+              knownData: { type_event: eventType || "onbekend" }
             })
           });
         } catch(e) {}
