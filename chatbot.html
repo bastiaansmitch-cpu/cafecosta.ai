@@ -438,6 +438,8 @@ ALGEMEEN:
     chatEl.style.display = open ? "none" : "flex";
     chatEl.style.flexDirection = "column";
     if (!open && history.length === 0) start();
+    // Stuur bericht naar parent (WordPress) om iframe grootte aan te passen
+    window.parent.postMessage(open ? "chat-closed" : "chat-open", "*");
   });
 
   // ─── HELPERS ──────────────────────────────────────────────
