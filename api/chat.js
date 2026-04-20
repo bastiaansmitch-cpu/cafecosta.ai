@@ -49,12 +49,22 @@ export default async function handler(req, res) {
             messages: [
               {
                 role: "system",
-                content: "Lees het gesprek en extraheer de gevraagde gegevens. Geef ALLEEN een geldig JSON object terug zonder markdown of uitleg. Regels: naam is alleen de voornaam van de bezoeker, contact is telefoonnummer of e-mailadres, type_event is een van: verjaardag, bedrijfsborrel, feest, anders, datum is de gewenste datum, personen is alleen een getal. Voorbeeld: {\"naam\":\"Jan\",\"contact\":\"0612345678\",\"type_event\":\"verjaardag\",\"datum\":\"8 mei\",\"personen\":\"30\"}. Als een waarde niet gevonden is gebruik dan onbekend."
+                content: `Analyseer dit gesprek tussen een bezoeker en een chatbot van Café Costa. Extraheer de onderstaande gegevens en retourneer ALLEEN een JSON object, geen uitleg, geen markdown.
+
+Velden:
+- naam: de voornaam van de bezoeker (staat vaak in een zin zoals "ik ben Jan" of "Jan 0612345678" of gewoon "Jan")
+- contact: het telefoonnummer of e-mailadres van de bezoeker
+- type_event: het type feest/event, kies exact één van: verjaardag, bedrijfsborrel, feest, anders
+- datum: de gewenste datum van het event (bijv "8 mei" of "8 juni")
+- personen: het aantal personen als getal
+
+Zoek goed in de bezoeker-berichten. Telefoonnummers zijn reeksen van 6 of meer cijfers. Namen staan vaak vlak voor of na een telefoonnummer.
+
+Voorbeeld output: {"naam":"Jan","contact":"0641806311","type_event":"verjaardag","datum":"8 mei","personen":"30"}
+
+Gebruik "onbekend" als je een waarde niet kunt vinden.`
               },
-              {
-                role: "user",
-                content: gesprek
-              }
+              { role: "user", content: gesprek }
             ]
           })
         });
